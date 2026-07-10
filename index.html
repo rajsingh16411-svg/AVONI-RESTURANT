@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anova Restaurant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0f0e0c;--surface:#1a1815;--card:#211f1b;--border:#2e2b26;
+      --gold:#c9a84c;--gold-lt:#e8c96a;--text:#f0ebe2;--muted:#8a8070;
+      --green:#4caf78;--red:#e05a5a;--blue:#5a8ee0;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+    /* ── ADMIN BAR ── */
+    #adminBar{
+      display:none;background:#1a1200;border-bottom:2px solid var(--gold);
+      padding:.6rem 5%;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;
+    }
+    #adminBar.show{display:flex}
+    .admin-label{font-size:.8rem;color:var(--gold);font-weight:600;letter-spacing:.1em}
+    .admin-actions{display:flex;gap:.6rem;flex-wrap:wrap}
+    .btn-sm{padding:.4rem 1rem;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:.2s}
+    .btn-gold{background:var(--gold);color:#0f0e0c}.btn-gold:hover{background:var(--gold-lt)}
+    .btn-red{background:transparent;border:1px solid var(--red)!important;color:var(--red)}.btn-red:hover{background:var(--red);color:#fff}
+    .btn-blue{background:transparent;border:1px solid var(--blue)!important;color:var(--blue)}.btn-blue:hover{background:var(--blue);color:#fff}
+    .btn-gray{background:transparent;border:1px solid var(--border)!important;color:var(--muted)}.btn-gray:hover{border-color:var(--gold)!important;color:var(--gold)}
+
+    /* ── NAVBAR ── */
+    nav{
+      position:sticky;top:0;z-index:100;
+      background:rgba(15,14,12,.93);backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      padding:0 5%;display:flex;align-items:center;justify-content:space-between;height:64px;
+    }
+    .logo{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--gold);letter-spacing:.04em}
+    .nav-links{display:flex;gap:2rem;list-style:none}
+    .nav-links a{text-decoration:none;color:var(--muted);font-size:.875rem;font-weight:500;transition:color .2s}
+    .nav-links a:hover{color:var(--gold-lt)}
+    .nav-right{display:flex;align-items:center;gap:.8rem}
+    .logo{cursor:pointer;user-select:none}
+    .cart-btn{background:var(--gold);color:#0f0e0c;border:none;padding:.4rem .9rem;border-radius:7px;font-size:.78rem;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:.4rem}
+    .cart-btn:hover{background:var(--gold-lt)}
+    .cart-count{background:#0f0e0c;color:var(--gold);border-radius:999px;padding:0 .4rem;font-size:.7rem;font-weight:700;display:none}
+    .cart-count.show{display:inline}
+    .hamburger{display:flex;flex-direction:column;gap:5px;cursor:pointer;border:none;background:none;padding:4px}
+    .hamburger span{display:block;width:24px;height:2px;background:var(--text);border-radius:2px;transition:.3s}
+    .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+    .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+    .hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+    /* slide drawer */
+    .mobile-menu{
+      position:fixed;top:64px;right:0;bottom:0;width:75%;max-width:300px;
+      background:var(--surface);border-left:1px solid var(--border);
+      padding:2rem 1.5rem;z-index:99;
+      transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    .mobile-menu.open{transform:translateX(0)}
+    .mobile-menu-backdrop{
+      display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:98;
+    }
+    .mobile-menu-backdrop.open{display:block}
+    .mobile-menu ul{list-style:none;display:flex;flex-direction:column;gap:0}
+    .mobile-menu li{border-bottom:1px solid var(--border)}
+    .mobile-menu a,.mobile-menu button.menu-item-btn{
+      display:block;text-decoration:none;color:var(--text);font-size:1rem;font-weight:500;
+      padding:1rem .5rem;transition:color .2s;background:none;border:none;cursor:pointer;width:100%;text-align:left;
+    }
+    .mobile-menu a:hover,.mobile-menu button.menu-item-btn:hover{color:var(--gold)}
+    .mobile-menu .menu-divider{height:1px;background:var(--border);margin:1rem 0}
+    .mobile-menu .menu-section-label{font-size:.7rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:.8rem .5rem .3rem}
+
+    /* ── HERO ── */
+    .hero{padding:5rem 5% 4rem;text-align:center;background:radial-gradient(ellipse 70% 60% at 50% 0%,#2b220f 0%,transparent 70%)}
+    .hero-eyebrow{display:inline-block;margin-bottom:1.2rem;font-size:.75rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);border:1px solid #3d3010;padding:.35rem .9rem;border-radius:999px}
+    .hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,6vw,4rem);line-height:1.15;margin-bottom:1rem}
+    .hero h1 span{color:var(--gold)}
+    .hero p{color:var(--muted);font-size:1.05rem;max-width:480px;margin:0 auto 2rem;line-height:1.7}
+    .hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .btn-primary{background:var(--gold);color:#0f0e0c;padding:.7rem 1.8rem;border-radius:8px;font-weight:600;font-size:.9rem;text-decoration:none;transition:.2s;border:none;cursor:pointer}
+    .btn-primary:hover{background:var(--gold-lt);transform:translateY(-2px)}
+    .btn-outline{border:1px solid var(--border);color:var(--text);padding:.7rem 1.8rem;border-radius:8px;font-weight:500;font-size:.9rem;text-decoration:none;transition:.2s}
+    .btn-outline:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px)}
+
+    .divider{height:1px;background:var(--border);margin:0 5%}
+
+    /* ── FILTER ── */
+    .filter-wrap{padding:2.5rem 5% 0;display:flex;gap:.6rem;flex-wrap:wrap}
+    .filter-btn{padding:.5rem 1.2rem;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.82rem;font-weight:500;cursor:pointer;transition:.2s}
+    .filter-btn:hover,.filter-btn.active{background:var(--gold);border-color:var(--gold);color:#0f0e0c}
+
+    /* ── MENU ── */
+    .menu-section{padding:2rem 5% 4rem}
+    .section-label{font-size:.7rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem}
+    .section-title{font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:1.8rem}
+    .menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem}
+
+    /* ── CARD ── */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:.2s;position:relative}
+    .card:hover{transform:translateY(-4px);border-color:#3d3518;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+    .card-img{width:100%;height:180px;display:flex;align-items:center;justify-content:center;font-size:3rem;background:var(--border)}
+    .card-body{padding:1.1rem 1.2rem 1.3rem}
+    .card-tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.7rem}
+    .tag{font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:999px}
+    .tag-veg{background:#0d2e18;color:var(--green);border:1px solid #1a4d2a}
+    .tag-spicy{background:#2e0d0d;color:var(--red);border:1px solid #4d1a1a}
+    .tag-new{background:#2b220f;color:var(--gold);border:1px solid #3d3010}
+    .card-name{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:.35rem}
+    .card-desc{color:var(--muted);font-size:.82rem;line-height:1.6;margin-bottom:1rem}
+    .card-footer{display:flex;align-items:center;justify-content:space-between}
+    .price{font-size:1.1rem;font-weight:700;color:var(--gold)}
+    .add-btn{background:transparent;border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:8px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+    .add-btn:hover{background:var(--gold);border-color:var(--gold);color:#0f0e0c}
+    .admin-card-btns{display:none;position:absolute;top:8px;right:8px;gap:.4rem}
+    .admin-card-btns.show{display:flex}
+    .card-edit-btn,.card-del-btn{width:30px;height:30px;border-radius:7px;border:none;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+    .card-edit-btn{background:#2b220f;color:var(--gold)}.card-edit-btn:hover{background:var(--gold);color:#0f0e0c}
+    .card-del-btn{background:#2e0d0d;color:var(--red)}.card-del-btn:hover{background:var(--red);color:#fff}
+
+    /* ── ORDERS PANEL ── */
+    #ordersPanel{display:none;padding:0 5% 4rem}
+    #ordersPanel.show{display:block}
+    .orders-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem}
+    .orders-table{width:100%;border-collapse:collapse;font-size:.85rem}
+    .orders-table th{text-align:left;padding:.7rem 1rem;font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+    .orders-table td{padding:.85rem 1rem;border-bottom:1px solid var(--border);vertical-align:top}
+    .orders-table tr:hover td{background:var(--card)}
+    .order-status{padding:.25rem .7rem;border-radius:999px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+    .status-new{background:#2b220f;color:var(--gold);border:1px solid #3d3010}
+    .status-done{background:#0d2e18;color:var(--green);border:1px solid #1a4d2a}
+    .status-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:.3rem .7rem;border-radius:6px;font-size:.72rem;cursor:pointer;transition:.2s}
+    .status-btn:hover{border-color:var(--green);color:var(--green)}
+    .del-order-btn{background:transparent;border:none;color:var(--red);cursor:pointer;font-size:.85rem;padding:.3rem}
+    .del-order-btn:hover{opacity:.7}
+    .empty-orders{text-align:center;padding:3rem;color:var(--muted);font-size:.9rem}
+
+    /* ── SOCIAL SECTION ── */
+    .social-section{padding:0 5% 4rem}
+    .social-grid{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:1rem}
+    .social-link{
+      display:flex;align-items:center;gap:.5rem;
+      background:var(--card);border:1px solid var(--border);
+      padding:.55rem 1rem;border-radius:10px;text-decoration:none;
+      color:var(--text);font-size:.85rem;font-weight:500;transition:.2s;position:relative;
+    }
+    .social-link:hover{border-color:var(--gold);color:var(--gold)}
+    .social-del{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:.65rem;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1}
+    .social-del.show{display:flex}
+
+    /* ── FOOTER ── */
+    footer{border-top:1px solid var(--border);padding:3rem 5%;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2rem}
+    .footer-brand .logo{display:block;margin-bottom:.6rem}
+    .footer-brand p{color:var(--muted);font-size:.83rem;line-height:1.7;max-width:220px}
+    .footer-col h4{font-size:.8rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.9rem}
+    .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.55rem}
+    .footer-col a{text-decoration:none;color:var(--muted);font-size:.85rem;transition:color .2s}
+    .footer-col a:hover{color:var(--text)}
+    .footer-bottom{border-top:1px solid var(--border);padding:1.2rem 5%;text-align:center;color:var(--muted);font-size:.78rem}
+
+    /* ── MODAL ── */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:440px;max-height:90vh;overflow-y:auto}
+    .modal h2{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:.3rem}
+    .modal p.sub{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem}
+    .modal label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:.4rem;letter-spacing:.06em;text-transform:uppercase}
+    .modal input,.modal select,.modal textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:.65rem .9rem;border-radius:8px;font-size:.9rem;margin-bottom:1rem;outline:none;font-family:inherit;transition:border-color .2s}
+    .modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--gold)}
+    .modal textarea{resize:vertical;min-height:75px}
+    .modal-btns{display:flex;gap:.7rem;justify-content:flex-end;margin-top:.5rem}
+    .modal-btns button{padding:.55rem 1.3rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:.2s}
+    .btn-cancel{background:transparent;border:1px solid var(--border)!important;color:var(--muted)}.btn-cancel:hover{border-color:var(--red)!important;color:var(--red)}
+    .btn-save{background:var(--gold);color:#0f0e0c}.btn-save:hover{background:var(--gold-lt)}
+    .error-msg{color:var(--red);font-size:.82rem;margin-bottom:.8rem;display:none}
+    .success-msg{color:var(--green);font-size:.82rem;margin-bottom:.8rem;display:none}
+    .checkbox-row{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+    .checkbox-row label{display:flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer}
+    .checkbox-row input[type=checkbox]{width:auto;margin:0;accent-color:var(--gold)}
+
+    /* cart modal items */
+    .cart-items{margin-bottom:1.2rem;display:flex;flex-direction:column;gap:.6rem}
+    .cart-item{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;font-size:.88rem}
+    .cart-item-left{display:flex;align-items:center;gap:.6rem}
+    .cart-qty{display:flex;align-items:center;gap:.5rem}
+    .qty-btn{background:var(--border);border:none;color:var(--text);width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+    .qty-btn:hover{background:var(--gold);color:#0f0e0c}
+    .cart-total{display:flex;justify-content:space-between;font-weight:600;font-size:.95rem;border-top:1px solid var(--border);padding-top:.9rem;margin-bottom:1.2rem}
+    .customer-name-input{margin-bottom:.8rem}
+
+    @media(max-width:640px){
+      .nav-links{display:none}
+      .hero{padding:3.5rem 5% 3rem}
+      .menu-grid{grid-template-columns:1fr}
+      .orders-table{font-size:.78rem}
+      .orders-table th,.orders-table td{padding:.6rem .5rem}
+    }
+    @media(min-width:641px){
+      .hamburger{display:flex}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ADMIN BAR -->
+<div id="adminBar">
+  <span class="admin-label">🔐 Admin Mode</span>
+  <div class="admin-actions">
+    <button class="btn-sm btn-gold"  onclick="openAddDishModal()">+ Add Dish</button>
+    <button class="btn-sm btn-blue"  onclick="toggleOrders()">📋 Orders <span id="ordersBadge"></span></button>
+    <button class="btn-sm btn-gold"  onclick="openAddSocialModal()">+ Social Link</button>
+    <button class="btn-sm btn-gray"  onclick="openResetModal()">🔑 Reset Password</button>
+    <button class="btn-sm btn-red"   onclick="adminLogout()">Logout</button>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav>
+  <span class="logo" onclick="secretClick()" title="Anova Restaurant">🍽️ Anova Restaurant</span>
+  <ul class="nav-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#menu">Menu</a></li>
+    <li><a href="#social">Follow Us</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="cart-btn" onclick="openCartModal()">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Backdrop -->
+<div class="mobile-menu-backdrop" id="menuBackdrop" onclick="toggleMenu()"></div>
+
+<!-- Slide Drawer -->
+<div class="mobile-menu" id="mobileMenu">
+  <ul>
+    <li><span class="menu-section-label">Navigation</span></li>
+    <li><a href="#"       onclick="toggleMenu()">🏠 Home</a></li>
+    <li><a href="#menu"   onclick="toggleMenu()">🍽️ Menu</a></li>
+    <li><a href="#social" onclick="toggleMenu()">📱 Follow Us</a></li>
+    <li><a href="#contact" onclick="toggleMenu()">📞 Contact</a></li>
+  </ul>
+  <div class="menu-divider"></div>
+  <ul>
+    <li><span class="menu-section-label">Order</span></li>
+    <li><button class="menu-item-btn" onclick="toggleMenu();openCartModal()">🛒 View Cart</button></li>
+  </ul>
+  <div id="adminMenuSection" style="display:none">
+    <div class="menu-divider"></div>
+    <ul>
+      <li><span class="menu-section-label">Admin</span></li>
+      <li><button class="menu-item-btn" onclick="toggleMenu();openAddDishModal()">➕ Add Dish</button></li>
+      <li><button class="menu-item-btn" onclick="toggleMenu();toggleOrders()">📋 Orders</button></li>
+      <li><button class="menu-item-btn" onclick="toggleMenu();openAddSocialModal()">🔗 Add Social</button></li>
+      <li><button class="menu-item-btn" onclick="toggleMenu();openResetModal()">🔑 Reset Password</button></li>
+      <li><button class="menu-item-btn" style="color:var(--red)" onclick="toggleMenu();adminLogout()">🚪 Logout</button></li>
+    </ul>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-eyebrow">Est. 2020 · Nepal</span>
+  <h1>Welcome to<br/><span>Anova Restaurant</span></h1>
+  <p>Fresh, flavourful dishes crafted with love. Dine in or order — we serve happiness on every plate.</p>
+  <div class="hero-btns">
+    <a href="#menu" class="btn-primary">Explore Menu</a>
+    <a href="#contact" class="btn-outline">Contact Us</a>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ORDERS PANEL (Admin only) -->
+<section id="ordersPanel">
+  <div class="menu-section" style="padding-bottom:0">
+    <div class="orders-header">
+      <div>
+        <p class="section-label">Admin Panel</p>
+        <h2 class="section-title">📋 Customer Orders</h2>
+      </div>
+      <button class="btn-sm btn-red" onclick="clearDoneOrders()">Clear Completed</button>
+    </div>
+    <div id="ordersTableWrap"></div>
+  </div>
+  <div class="divider" style="margin-top:2rem"></div>
+</section>
+
+<!-- FILTER -->
+<div class="filter-wrap" id="menu">
+  <button class="filter-btn active" onclick="filterMenu('all',this)">All</button>
+  <button class="filter-btn" onclick="filterMenu('starters',this)">Starters</button>
+  <button class="filter-btn" onclick="filterMenu('mains',this)">Main Course</button>
+  <button class="filter-btn" onclick="filterMenu('breads',this)">Breads</button>
+  <button class="filter-btn" onclick="filterMenu('desserts',this)">Desserts</button>
+  <button class="filter-btn" onclick="filterMenu('drinks',this)">Drinks</button>
+</div>
+
+<!-- MENU GRID -->
+<section class="menu-section">
+  <p class="section-label">Our Specialities</p>
+  <h2 class="section-title">Today's Menu</h2>
+  <div class="menu-grid" id="menuGrid"></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SOCIAL MEDIA -->
+<section class="social-section" id="social">
+  <div style="padding-top:2.5rem">
+    <p class="section-label">Stay Connected</p>
+    <h2 class="section-title">Follow Us</h2>
+    <div class="social-grid" id="socialGrid"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="footer-brand">
+    <span class="logo">🍽️ Anova Restaurant</span>
+    <p>Authentic food served with warmth. Visit us anytime!</p>
+  </div>
+  <div class="footer-col">
+    <h4>Hours</h4>
+    <ul><li><a href="#">Mon–Sun: 9:00 AM – 12:00 PM</a></li></ul>
+  </div>
+  <div class="footer-col">
+    <h4>Contact</h4>
+    <ul>
+      <li><a href="tel:+9779807638455">+977 9807638455</a></li>
+      <li><a href="#">Nepal</a></li>
+    </ul>
+  </div>
+  <div class="footer-col">
+    <h4>Follow</h4>
+    <ul id="footerSocial"></ul>
+  </div>
+</footer>
+<div class="footer-bottom">© 2026 Anova Restaurant. Made with ❤️</div>
+
+<!-- ════════════ MODALS ════════════ -->
+
+<!-- LOGIN -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <h2>Admin Login</h2>
+    <p class="sub">Enter your password to access the admin panel.</p>
+    <div class="error-msg" id="loginError">❌ Wrong password. Try again.</div>
+    <label>Password</label>
+    <input type="password" id="loginPass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('loginModal')">Cancel</button>
+      <button class="btn-save"   onclick="doLogin()">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT DISH -->
+<div class="modal-overlay" id="addDishModal">
+  <div class="modal">
+    <h2 id="dishModalTitle">Add New Dish</h2>
+    <p class="sub" id="dishModalSub">Fill in the details below.</p>
+    <label>Dish Name</label>
+    <input type="text"   id="dishName"  placeholder="e.g. Butter Chicken"/>
+    <label>Description</label>
+    <textarea            id="dishDesc"  placeholder="Short description..."></textarea>
+    <label>Price (₹)</label>
+    <input type="number" id="dishPrice" placeholder="e.g. 250"/>
+    <label>Emoji Icon</label>
+    <input type="text"   id="dishEmoji" placeholder="e.g. 🍛" maxlength="4"/>
+    <label>Category</label>
+    <select id="dishCat">
+      <option value="starters">Starters</option>
+      <option value="mains">Main Course</option>
+      <option value="breads">Breads</option>
+      <option value="desserts">Desserts</option>
+      <option value="drinks">Drinks</option>
+    </select>
+    <label>Tags</label>
+    <div class="checkbox-row">
+      <label><input type="checkbox" id="tagVeg"/>   🟢 Veg</label>
+      <label><input type="checkbox" id="tagSpicy"/> 🌶️ Spicy</label>
+      <label><input type="checkbox" id="tagNew"/>   ⭐ New</label>
+    </div>
+    <div class="error-msg" id="dishError">❌ Please fill all required fields.</div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('addDishModal')">Cancel</button>
+      <button class="btn-save"   id="dishSaveBtn" onclick="saveDish()">Add Dish</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SOCIAL -->
+<div class="modal-overlay" id="addSocialModal">
+  <div class="modal">
+    <h2>Add Social Link</h2>
+    <p class="sub">Add a social media link to your page.</p>
+    <label>Platform Name</label>
+    <input type="text" id="socialName" placeholder="e.g. Instagram"/>
+    <label>Emoji Icon</label>
+    <input type="text" id="socialEmoji" placeholder="e.g. 📸" maxlength="4"/>
+    <label>URL / Link</label>
+    <input type="text" id="socialUrl" placeholder="https://instagram.com/yourpage"/>
+    <div class="error-msg" id="socialError">❌ Please fill all fields.</div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('addSocialModal')">Cancel</button>
+      <button class="btn-save"   onclick="saveSocial()">Add Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h2>Reset Password</h2>
+    <p class="sub">Enter your current password and choose a new one.</p>
+    <div class="error-msg"   id="resetError"></div>
+    <div class="success-msg" id="resetSuccess">✅ Password changed successfully!</div>
+    <label>Current Password</label>
+    <input type="password" id="currentPass" placeholder="Current password"/>
+    <label>New Password</label>
+    <input type="password" id="newPass" placeholder="New password (min 6 chars)"/>
+    <label>Confirm New Password</label>
+    <input type="password" id="confirmPass" placeholder="Confirm new password"/>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('resetModal')">Cancel</button>
+      <button class="btn-save"   onclick="resetPassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE DISH CONFIRM -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <h2>Delete Dish?</h2>
+    <p class="sub">Are you sure you want to delete <strong id="deleteNameLabel"></strong>? This cannot be undone.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+      <button class="btn-save"   style="background:var(--red);color:#fff" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- CART / ORDER -->
+<div class="modal-overlay" id="cartModal">
+  <div class="modal">
+    <h2>🛒 Your Cart</h2>
+    <p class="sub" id="cartSub">Review your items and place order.</p>
+    <div class="cart-items" id="cartItemsList"></div>
+    <div class="cart-total"><span>Total</span><span id="cartTotalAmt">₹0</span></div>
+    <label>Your Name</label>
+    <input type="text" id="customerName" placeholder="Enter your name" class="customer-name-input"/>
+    <div class="error-msg" id="cartError">❌ Please enter your name.</div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('cartModal')">Close</button>
+      <button class="btn-save"   onclick="placeOrder()">Place Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER SUCCESS -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:3rem;margin-bottom:1rem">🎉</div>
+    <h2 style="margin-bottom:.5rem">Order Placed!</h2>
+    <p class="sub" id="successMsg">Your order has been received.</p>
+    <div class="modal-btns" style="justify-content:center">
+      <button class="btn-save" onclick="closeModal('successModal')">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let adminPassword = 'pray#@143';
+let isAdmin = false;
+let editingDishId = null;
+let deletingDishId = null;
+let activeFilter = 'all';
+let showOrders = false;
+let nextDishId = 13;
+let nextOrderId = 1;
+let nextSocialId = 1;
+
+let cart = {}; // { dishId: qty }
+
+let dishes = [
+  {id:1, name:'Paneer Tikka',       desc:'Soft cottage cheese cubes marinated in spiced yogurt, grilled in tandoor.',       price:280,emoji:'🥗',cat:'starters',veg:true, spicy:false,isNew:true },
+  {id:2, name:'Chicken 65',          desc:'Crispy fried chicken tossed in fiery red chillies, curry leaves & secret spices.',price:320,emoji:'🍗',cat:'starters',veg:false,spicy:true, isNew:false},
+  {id:3, name:'Pyaaz Pakoda',        desc:'Crispy onion fritters with green chillies and fresh coriander.',                  price:150,emoji:'🧅',cat:'starters',veg:true, spicy:true, isNew:false},
+  {id:4, name:'Dum Biryani',         desc:'Slow-cooked basmati rice layered with tender meat, saffron & fried onions.',      price:480,emoji:'🍛',cat:'mains',   veg:false,spicy:false,isNew:true },
+  {id:5, name:'Shahi Paneer',        desc:'Paneer in a rich, creamy cashew-tomato gravy, mildly spiced.',                   price:350,emoji:'🫕',cat:'mains',   veg:true, spicy:false,isNew:false},
+  {id:6, name:'Mutton Rogan Josh',   desc:'Kashmiri-style slow-cooked mutton in aromatic whole spices.',                    price:520,emoji:'🍖',cat:'mains',   veg:false,spicy:true, isNew:false},
+  {id:7, name:'Garlic Naan',         desc:'Soft leavened bread brushed with butter & garlic, baked in clay tandoor.',       price:80, emoji:'🫓',cat:'breads',  veg:true, spicy:false,isNew:false},
+  {id:8, name:'Stuffed Laccha Paratha',desc:'Multi-layered flaky paratha stuffed with spiced potatoes.',                    price:120,emoji:'🥙',cat:'breads',  veg:true, spicy:false,isNew:true },
+  {id:9, name:'Gulab Jamun',         desc:'Melt-in-mouth milk solids soaked in rose-cardamom sugar syrup.',                 price:120,emoji:'🍮',cat:'desserts',veg:true, spicy:false,isNew:false},
+  {id:10,name:'Kulfi Falooda',       desc:'Traditional dense ice cream with rose syrup, basil seeds & vermicelli.',         price:160,emoji:'🍨',cat:'desserts',veg:true, spicy:false,isNew:true },
+  {id:11,name:'Mango Lassi',         desc:'Chilled thick yogurt blended with Alphonso mangoes & cardamom.',                 price:140,emoji:'🥭',cat:'drinks',  veg:true, spicy:false,isNew:false},
+  {id:12,name:'Masala Chai',         desc:'Spiced milk tea brewed with ginger, cardamom, cinnamon & tea leaves.',           price:60, emoji:'☕',cat:'drinks',  veg:true, spicy:false,isNew:false},
+];
+
+let orders = []; // { id, customerName, items:[{name,qty,price}], total, time, done }
+
+let socials = [
+  {id:nextSocialId++, name:'Instagram', emoji:'📸', url:'https://instagram.com'},
+  {id:nextSocialId++, name:'Facebook',  emoji:'📘', url:'https://facebook.com'},
+];
+
+// ── RENDER MENU ──
+function renderMenu(){
+  const grid = document.getElementById('menuGrid');
+  const list = activeFilter==='all' ? dishes : dishes.filter(d=>d.cat===activeFilter);
+  if(!list.length){ grid.innerHTML=`<p style="color:var(--muted);grid-column:1/-1;padding:2rem 0">No dishes yet in this category.</p>`; return; }
+  grid.innerHTML = list.map(d=>`
+    <div class="card" data-id="${d.id}">
+      <div class="admin-card-btns ${isAdmin?'show':''}">
+        <button class="card-edit-btn" onclick="openEditDishModal(${d.id})">✏️</button>
+        <button class="card-del-btn"  onclick="openDeleteModal(${d.id})">🗑️</button>
+      </div>
+      <div class="card-img">${d.emoji}</div>
+      <div class="card-body">
+        <div class="card-tags">
+          ${d.veg   ?'<span class="tag tag-veg">Veg</span>'  :''}
+          ${d.spicy ?'<span class="tag tag-spicy">Spicy</span>':''}
+          ${d.isNew ?'<span class="tag tag-new">New</span>'  :''}
+        </div>
+        <h3 class="card-name">${d.name}</h3>
+        <p class="card-desc">${d.desc}</p>
+        <div class="card-footer">
+          <span class="price">₹${d.price}</span>
+          <button class="add-btn" onclick="addToCart(${d.id},this)">+</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── RENDER SOCIAL ──
+function renderSocial(){
+  const grid = document.getElementById('socialGrid');
+  const footer = document.getElementById('footerSocial');
+  grid.innerHTML = socials.map(s=>`
+    <a class="social-link" href="${s.url}" target="_blank" rel="noopener">
+      <span>${s.emoji}</span><span>${s.name}</span>
+      <button class="social-del ${isAdmin?'show':''}" onclick="deleteSocial(event,${s.id})">×</button>
+    </a>
+  `).join('') || `<p style="color:var(--muted);font-size:.85rem">No social links yet.</p>`;
+  footer.innerHTML = socials.map(s=>`<li><a href="${s.url}" target="_blank">${s.emoji} ${s.name}</a></li>`).join('');
+}
+
+// ── RENDER ORDERS ──
+function renderOrders(){
+  const wrap = document.getElementById('ordersTableWrap');
+  const badge = document.getElementById('ordersBadge');
+  const newCount = orders.filter(o=>!o.done).length;
+  badge.textContent = newCount ? `(${newCount} new)` : '';
+  if(!orders.length){ wrap.innerHTML=`<div class="empty-orders">🍽️ No orders yet. Customers will appear here when they order.</div>`; return; }
+  wrap.innerHTML=`
+    <table class="orders-table">
+      <thead><tr>
+        <th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${orders.slice().reverse().map(o=>`
+          <tr>
+            <td>#${o.id}</td>
+            <td><strong>${o.customerName}</strong></td>
+            <td>${o.items.map(i=>`${i.emoji} ${i.name} ×${i.qty}`).join('<br/>')}</td>
+            <td style="color:var(--gold);font-weight:700">₹${o.total}</td>
+            <td style="color:var(--muted);white-space:nowrap">${o.time}</td>
+            <td>
+              ${o.done
+                ? '<span class="order-status status-done">✅ Done</span>'
+                : `<button class="status-btn" onclick="markDone(${o.id})">Mark Done</button>`
+              }
+            </td>
+            <td><button class="del-order-btn" onclick="deleteOrder(${o.id})" title="Remove">🗑️</button></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── CART ──
+function addToCart(dishId, btn){
+  cart[dishId] = (cart[dishId]||0)+1;
+  updateCartCount();
+  btn.textContent='✓'; btn.style.cssText='background:#4caf78;border-color:#4caf78;color:#fff';
+  setTimeout(()=>{ btn.textContent='+'; btn.style.cssText=''; },1200);
+}
+function updateCartCount(){
+  const total = Object.values(cart).reduce((a,b)=>a+b,0);
+  const el = document.getElementById('cartCount');
+  el.textContent=total; total>0?el.classList.add('show'):el.classList.remove('show');
+}
+function openCartModal(){
+  renderCartModal(); openModal('cartModal');
+}
+function renderCartModal(){
+  const list = document.getElementById('cartItemsList');
+  const keys = Object.keys(cart).filter(id=>cart[id]>0);
+  document.getElementById('cartError').style.display='none';
+  if(!keys.length){ list.innerHTML=`<p style="color:var(--muted);font-size:.88rem;text-align:center;padding:1rem">Your cart is empty.</p>`; document.getElementById('cartTotalAmt').textContent='₹0'; return; }
+  let total=0;
+  list.innerHTML=keys.map(id=>{
+    const d=dishes.find(x=>x.id==id); if(!d) return '';
+    total+=d.price*cart[id];
+    return `<div class="cart-item">
+      <div class="cart-item-left"><span>${d.emoji}</span><span>${d.name}</span></div>
+      <div class="cart-qty">
+        <button class="qty-btn" onclick="changeQty(${d.id},-1)">−</button>
+        <span>${cart[id]}</span>
+        <button class="qty-btn" onclick="changeQty(${d.id},1)">+</button>
+        <span style="color:var(--gold);font-weight:600;margin-left:.3rem">₹${d.price*cart[id]}</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('cartTotalAmt').textContent=`₹${total}`;
+}
+function changeQty(id,delta){
+  cart[id]=(cart[id]||0)+delta;
+  if(cart[id]<=0) delete cart[id];
+  updateCartCount(); renderCartModal();
+}
+function placeOrder(){
+  const name=document.getElementById('customerName').value.trim();
+  if(!name){ document.getElementById('cartError').style.display='block'; return; }
+  const keys=Object.keys(cart).filter(id=>cart[id]>0);
+  if(!keys.length) return;
+  let total=0;
+  const items=keys.map(id=>{
+    const d=dishes.find(x=>x.id==id);
+    total+=d.price*cart[id];
+    return {name:d.name,emoji:d.emoji,qty:cart[id],price:d.price};
+  });
+  const now=new Date();
+  const time=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  orders.push({id:nextOrderId++,customerName:name,items,total,time,done:false});
+  cart={}; updateCartCount();
+  closeModal('cartModal');
+  document.getElementById('customerName').value='';
+  document.getElementById('successMsg').textContent=`Thank you, ${name}! Your order has been received. 🎉`;
+  openModal('successModal');
+  if(isAdmin) renderOrders();
+}
+function markDone(id){ const o=orders.find(x=>x.id===id); if(o) o.done=true; renderOrders(); }
+function deleteOrder(id){ orders=orders.filter(x=>x.id!==id); renderOrders(); }
+function clearDoneOrders(){ orders=orders.filter(o=>!o.done); renderOrders(); }
+
+// ── FILTER ──
+function filterMenu(cat,btn){
+  activeFilter=cat;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderMenu();
+}
+
+// ── TOGGLE ORDERS ──
+function toggleOrders(){
+  showOrders=!showOrders;
+  const panel=document.getElementById('ordersPanel');
+  showOrders?panel.classList.add('show'):panel.classList.remove('show');
+  if(showOrders){ renderOrders(); panel.scrollIntoView({behavior:'smooth'}); }
+}
+
+// ── HAMBURGER ──
+function toggleMenu(){
+  const menu=document.getElementById('mobileMenu');
+  const backdrop=document.getElementById('menuBackdrop');
+  const btn=document.getElementById('hamburgerBtn');
+  const isOpen=menu.classList.contains('open');
+  if(isOpen){
+    menu.classList.remove('open');
+    backdrop.classList.remove('open');
+    btn.classList.remove('open');
+  } else {
+    menu.classList.add('open');
+    backdrop.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+
+// ── SECRET ADMIN LOGIN (logo pe 5 baar click) ──
+let secretClicks=0, secretTimer=null;
+function secretClick(){
+  secretClicks++;
+  clearTimeout(secretTimer);
+  secretTimer=setTimeout(()=>secretClicks=0, 2000);
+  if(secretClicks>=5){ secretClicks=0; if(!isAdmin) openLoginModal(); }
+}
+
+// ── MODAL HELPERS ──
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// ── LOGIN ──
+function openLoginModal(){ document.getElementById('loginError').style.display='none'; document.getElementById('loginPass').value=''; openModal('loginModal'); }
+function doLogin(){
+  const pass=document.getElementById('loginPass').value;
+  if(pass===adminPassword){
+    isAdmin=true; closeModal('loginModal');
+    document.getElementById('adminBar').classList.add('show');
+    document.getElementById('adminMenuSection').style.display='block';
+    renderMenu(); renderSocial();
+  } else { document.getElementById('loginError').style.display='block'; }
+}
+function adminLogout(){
+  isAdmin=false; showOrders=false;
+  document.getElementById('adminBar').classList.remove('show');
+  document.getElementById('adminMenuSection').style.display='none';
+  document.getElementById('ordersPanel').classList.remove('show');
+  renderMenu(); renderSocial();
+}
+
+// ── ADD/EDIT DISH ──
+function openAddDishModal(){
+  editingDishId=null;
+  document.getElementById('dishModalTitle').textContent='Add New Dish';
+  document.getElementById('dishModalSub').textContent='Fill in the details below.';
+  document.getElementById('dishSaveBtn').textContent='Add Dish';
+  ['dishName','dishDesc','dishEmoji'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('dishPrice').value='';
+  document.getElementById('dishCat').value='starters';
+  ['tagVeg','tagSpicy','tagNew'].forEach(id=>document.getElementById(id).checked=false);
+  document.getElementById('dishError').style.display='none';
+  openModal('addDishModal');
+}
+function openEditDishModal(id){
+  const d=dishes.find(x=>x.id===id); if(!d) return;
+  editingDishId=id;
+  document.getElementById('dishModalTitle').textContent='Edit Dish';
+  document.getElementById('dishModalSub').textContent='Update the details below.';
+  document.getElementById('dishSaveBtn').textContent='Save Changes';
+  document.getElementById('dishName').value=d.name;
+  document.getElementById('dishDesc').value=d.desc;
+  document.getElementById('dishPrice').value=d.price;
+  document.getElementById('dishEmoji').value=d.emoji;
+  document.getElementById('dishCat').value=d.cat;
+  document.getElementById('tagVeg').checked=d.veg;
+  document.getElementById('tagSpicy').checked=d.spicy;
+  document.getElementById('tagNew').checked=d.isNew;
+  document.getElementById('dishError').style.display='none';
+  openModal('addDishModal');
+}
+function saveDish(){
+  const name=document.getElementById('dishName').value.trim();
+  const desc=document.getElementById('dishDesc').value.trim();
+  const price=document.getElementById('dishPrice').value.trim();
+  const emoji=document.getElementById('dishEmoji').value.trim()||'🍽️';
+  const cat=document.getElementById('dishCat').value;
+  const veg=document.getElementById('tagVeg').checked;
+  const spicy=document.getElementById('tagSpicy').checked;
+  const isNew=document.getElementById('tagNew').checked;
+  if(!name||!desc||!price){ document.getElementById('dishError').style.display='block'; return; }
+  document.getElementById('dishError').style.display='none';
+  if(editingDishId){ Object.assign(dishes.find(x=>x.id===editingDishId),{name,desc,price:+price,emoji,cat,veg,spicy,isNew}); }
+  else { dishes.push({id:nextDishId++,name,desc,price:+price,emoji,cat,veg,spicy,isNew}); }
+  closeModal('addDishModal'); renderMenu();
+}
+
+// ── DELETE DISH ──
+function openDeleteModal(id){
+  deletingDishId=id;
+  const d=dishes.find(x=>x.id===id);
+  document.getElementById('deleteNameLabel').textContent=d?`"${d.name}"`:'this dish';
+  openModal('deleteModal');
+}
+function confirmDelete(){ dishes=dishes.filter(x=>x.id!==deletingDishId); closeModal('deleteModal'); renderMenu(); }
+
+// ── SOCIAL ──
+function openAddSocialModal(){
+  ['socialName','socialEmoji','socialUrl'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('socialError').style.display='none';
+  openModal('addSocialModal');
+}
+function saveSocial(){
+  const name=document.getElementById('socialName').value.trim();
+  const emoji=document.getElementById('socialEmoji').value.trim()||'🔗';
+  const url=document.getElementById('socialUrl').value.trim();
+  if(!name||!url){ document.getElementById('socialError').style.display='block'; return; }
+  socials.push({id:nextSocialId++,name,emoji,url});
+  closeModal('addSocialModal'); renderSocial();
+}
+function deleteSocial(e,id){ e.preventDefault(); e.stopPropagation(); socials=socials.filter(s=>s.id!==id); renderSocial(); }
+
+// ── RESET PASSWORD ──
+function openResetModal(){
+  ['currentPass','newPass','confirmPass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('resetError').style.display='none';
+  document.getElementById('resetSuccess').style.display='none';
+  openModal('resetModal');
+}
+function resetPassword(){
+  const cur=document.getElementById('currentPass').value;
+  const newP=document.getElementById('newPass').value;
+  const conf=document.getElementById('confirmPass').value;
+  const err=document.getElementById('resetError');
+  const suc=document.getElementById('resetSuccess');
+  err.style.display='none'; suc.style.display='none';
+  if(cur!==adminPassword){ err.textContent='❌ Current password is wrong.'; err.style.display='block'; return; }
+  if(newP.length<6){ err.textContent='❌ Password must be at least 6 characters.'; err.style.display='block'; return; }
+  if(newP!==conf){ err.textContent='❌ Passwords do not match.'; err.style.display='block'; return; }
+  adminPassword=newP; suc.style.display='block';
+  setTimeout(()=>closeModal('resetModal'),1500);
+}
+
+// ── INIT ──
+renderMenu();
+renderSocial();
+</script>
+</body>
+</html>
